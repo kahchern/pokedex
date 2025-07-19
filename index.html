@@ -1,132 +1,36 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>kc's Pokédex</title>
+<title>Pokédex</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #222; color: #fff; font-family: "SF Pro Display","SF Pro Text","Segoe UI",sans-serif; }
-  .pokedex {
-    max-width: 380px;
-    margin: 2em auto;
-    padding: 1em;
-    background: #f00;
-    border: 8px solid #333;
-    border-radius: 8px;
-    box-shadow: 0 0 12px rgba(0,0,0,.5);
-  }
-  .pokedex h1 {
-    margin: 0 0 .5em;
-    font-size: 1.6em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: .4em;
-  }
-  .logo {
-    width: 1.4em;
-    height: 1.4em;
-    fill: #fff;
-    stroke: #000;
-    stroke-width: 4;
-  }
-  .controls {
-    display: flex;
-    gap: .5em;
-    margin-bottom: .7em;
-  }
-  .controls input {
-    flex: 1;
-    padding: .6em;
-    font-size: 1em;
-    border: 2px solid #333;
-    border-radius: 4px;
-    text-align: center;
-  }
-  .btn-go {
-    padding: 0 .8em;
-    font-size: 1em;
-    border: none;
-    border-radius: 4px;
-    background: #333;
-    color: #fff;
-    cursor: pointer;
-  }
-  .screen {
-    background: #eee;
-    color: #000;
-    padding: 1em;
-    border: 4px solid #333;
-    border-radius: 4px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1em;
-  }
-  .display p {
-    margin: 0;
-    font-weight: bold;
-    font-size: 1.3em;
-    text-align: center;
-  }
-  .display img {
-    image-rendering: pixelated;
-    width: min(60vw, 128px);
-    height: auto;
-  }
-  .stats {
-    display: flex;
-    gap: .5em;
-    justify-content: center;
-    width: 100%;
-  }
-  .strength, .weakness {
-    flex: 1;
-    background: #fff;
-    padding: .5em;
-    border: 2px solid #333;
-    border-radius: 4px;
-    font-size: .9em;
-    text-align: center;
-  }
-  .strength { border-color: #090; }
-  .weakness { border-color: #900; }
-
-  @media (max-width: 480px) {
-    .pokedex {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      margin: 0;
-      padding: .5em;
-      border-width: 6px;
-      border-radius: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    .pokedex h1 {
-      font-size: 1.4em;
-      margin-bottom: .4em;
-    }
-    .controls {
-      margin-bottom: .4em;
-    }
-    .controls input, .btn-go {
-      padding: .6em;
-      font-size: 1em;
-    }
-    .screen {
-      flex: 1;
-      padding: .8em;
-      overflow-y: auto;
-    }
-    .display img {
-      width: min(80vw, 128px);
-    }
-    .stats {
-      flex-direction: column;
-      gap: .4em;
-    }
+  html, body { margin:0; padding:0; width:100%; height:100%; background:#222; color:#fff; font-family:"SF Pro Display","SF Pro Text","Segoe UI",sans-serif; }
+  .pokedex { max-width:380px; margin:2em auto; padding:1em; background:#f00; border:8px solid #333; border-radius:8px; box-shadow:0 0 12px rgba(0,0,0,.5); }
+  .pokedex h1 { margin:0 0 .5em; font-size:1.6em; display:flex; align-items:center; justify-content:center; gap:.4em; }
+  .logo { width:1.4em; height:1.4em; fill:#fff; stroke:#000; stroke-width:4; }
+  .controls { display:flex; gap:.5em; margin-bottom:.7em; position:relative; }
+  .autocomplete { position:relative; flex:1; }
+  .controls input { width:100%; padding:.6em; font-size:1em; border:2px solid #333; border-radius:4px; text-align:center; }
+  .list { position:absolute; top:100%; left:0; right:0; background:#fff; color:#000; max-height:150px; overflow:auto; border:1px solid #333; margin:0; padding:0; list-style:none; z-index:1; }
+  .list li { padding:.4em .6em; cursor:pointer; }
+  .list li:hover { background:#ddd; }
+  .btn-go { padding:0 .8em; font-size:1em; border:none; border-radius:4px; background:#333; color:#fff; cursor:pointer; }
+  .screen { background:#eee; color:#000; padding:1em; border:4px solid #333; border-radius:4px; display:flex; flex-direction:column; align-items:center; gap:1em; }
+  .display p { margin:0; font-weight:bold; font-size:1.3em; text-align:center; }
+  .types { display:flex; gap:.5em; flex-wrap:wrap; justify-content:center; }
+  .type { background:#ddd; color:#000; padding:.2em .6em; border-radius:4px; font-size:.9em; text-transform:capitalize; }
+  .display img { image-rendering:pixelated; width:min(60vw,128px); height:auto; }
+  .stats { display:flex; gap:.5em; justify-content:center; width:100%; }
+  .strength, .weakness { flex:1; background:#fff; padding:.5em; border:2px solid #333; border-radius:4px; font-size:.9em; text-align:center; }
+  .strength { border-color:#090; }
+  .weakness { border-color:#900; }
+  @media (max-width:480px) {
+    .pokedex { position:fixed; top:0; left:0; width:100vw; height:100vh; margin:0; padding:.5em; border-width:6px; border-radius:0; display:flex; flex-direction:column; }
+    .pokedex h1 { font-size:1.4em; margin-bottom:.4em; }
+    .controls { margin-bottom:.4em; flex-direction:column; gap:.4em; }
+    .controls input, .btn-go { width:100%; padding:.6em; font-size:1em; }
+    .screen { flex:1; padding:.8em; overflow-y:auto; gap:.8em; }
+    .display img { width:min(80vw,128px); }
+    .stats { flex-direction:column; gap:.4em; }
   }
 </style>
 <main class="pokedex">
@@ -140,12 +44,16 @@
     Pokédex
   </h1>
   <div class="controls">
-    <input id="i" type="text" placeholder="ID or Name">
+    <div class="autocomplete">
+      <input id="i" type="text" placeholder="ID or Name" autocomplete="off">
+      <ul id="list" class="list" hidden></ul>
+    </div>
     <button class="btn-go" onclick="g()">Go</button>
   </div>
   <div class="screen">
     <div class="display">
       <p id="n"></p>
+      <div class="types" id="t"></div>
       <img id="m" alt="">
     </div>
     <div class="stats">
@@ -155,28 +63,42 @@
   </div>
 </main>
 <script>
-  const i = document.getElementById('i'),
-        n = document.getElementById('n'),
-        m = document.getElementById('m'),
-        w = document.getElementById('w'),
-        s = document.getElementById('s');
-  async function g() {
-    const v = i.value.trim().toLowerCase(); if (!v) return;
-    try {
-      const r = await fetch('https://pokeapi.co/api/v2/pokemon/' + encodeURIComponent(v));
-      if (!r.ok) throw 0;
-      const j = await r.json();
-      n.textContent = j.name.replace(/^./, c => c.toUpperCase());
-      m.src = j.sprites.front_default || '';
-      const types = j.types.map(t => t.type.name),
-            data = await Promise.all(types.map(t => fetch('https://pokeapi.co/api/v2/type/' + t).then(r => r.json()))),
-            weak = [...new Set(data.flatMap(d => d.damage_relations.double_damage_from.map(x => x.name)))],
-            strong = [...new Set(data.flatMap(d => d.damage_relations.double_damage_to.map(x => x.name)))];
-      w.textContent = 'Weak: ' + (weak.length ? weak.map(c => c.replace(/^./, x => x.toUpperCase())).join(', ') : 'None');
-      s.textContent = 'Strong: ' + (strong.length ? strong.map(c => c.replace(/^./, x => x.toUpperCase())).join(', ') : 'None');
-    } catch {
-      n.textContent = 'Not found'; m.src = ''; w.textContent = ''; s.textContent = '';
+  const i=document.getElementById('i'), list=document.getElementById('list');
+  let names=[];
+  fetch('https://pokeapi.co/api/v2/pokemon?limit=1010')
+    .then(r=>r.json()).then(d=>names=d.results.map(x=>x.name));
+  i.addEventListener('input',()=>{
+    const v=i.value.toLowerCase(), suggestions=v?names.filter(n=>n.startsWith(v)).slice(0,5):[];
+    list.innerHTML=suggestions.map(s=>`<li>${s}</li>`).join('');
+    list.hidden=!suggestions.length;
+  });
+  list.addEventListener('click',e=>{
+    if(e.target.tagName==='LI'){
+      i.value=e.target.textContent;
+      list.hidden=true;
+      g();
+    }
+  });
+  document.addEventListener('click',e=>{if(!e.target.closest('.autocomplete')) list.hidden=true;});
+
+  const n=document.getElementById('n'), t=document.getElementById('t'), m=document.getElementById('m'), w=document.getElementById('w'), s=document.getElementById('s');
+  async function g(){
+    const v=i.value.trim().toLowerCase(); if(!v)return;
+    try{
+      const r=await fetch('https://pokeapi.co/api/v2/pokemon/'+encodeURIComponent(v)); if(!r.ok)throw 0;
+      const j=await r.json();
+      n.textContent=j.name.replace(/^./,c=>c.toUpperCase());
+      t.innerHTML=j.types.map(x=>`<span class="type">${x.type.name}</span>`).join('');
+      m.src=j.sprites.front_default||'';
+      const data=await Promise.all(j.types.map(x=>fetch('https://pokeapi.co/api/v2/type/'+x.type.name).then(r=>r.json())));
+      const weak=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_from.map(x=>x.name)))];
+      const strong=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_to.map(x=>x.name)))];
+      w.textContent='Weak: '+(weak.length?weak.map(x=>x[0].toUpperCase()+x.slice(1)).join(', '):'None');
+      s.textContent='Strong: '+(strong.length?strong.map(x=>x[0].toUpperCase()+x.slice(1)).join(', '):'None');
+    }catch{
+      n.textContent='Not found'; t.innerHTML=''; m.src=''; w.textContent=''; s.textContent='';
     }
   }
-  i.addEventListener('keydown', e => { if (e.key === 'Enter') g(); });
+  i.addEventListener('keydown',e=>{if(e.key==='Enter')g();});
 </script>
+
