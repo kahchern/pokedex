@@ -1,6 +1,6 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>Pokédex</title>
+<title>kc's Pokedex</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; }
   html, body { margin:0; padding:0; width:100%; height:100%; background:#222; color:#fff; font-family:"SF Pro Display","SF Pro Text","Segoe UI",sans-serif; }
@@ -43,7 +43,7 @@
       <circle cx="32" cy="32" r="12"/>
       <circle cx="32" cy="32" r="5" fill="#000"/>
     </svg>
-    Pokédex
+    kc's Pokedex
   </h1>
   <div class="controls">
     <div class="autocomplete">
@@ -88,5 +88,3 @@
   async function g(){const v=i.value.trim().toLowerCase();if(!v)return;try{const r=await fetch('https://pokeapi.co/api/v2/pokemon/'+encodeURIComponent(v));if(!r.ok)throw 0;const j=await r.json();n.textContent=j.name.replace(/^./,c=>c.toUpperCase());t.innerHTML=j.types.map(x=>{const c=typeColors[x.type.name]||'#ddd';return `<span class="type" style="background:${c};border:2px solid ${c}">${x.type.name}</span>`;}).join('');m.src=j.sprites.front_default||'';const data=await Promise.all(j.types.map(x=>fetch('https://pokeapi.co/api/v2/type/'+x.type.name).then(r=>r.json())));const weak=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_from.map(x=>x.name)))];const strong=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_to.map(x=>x.name)))];w.textContent='Weak: '+(weak.length?weak.map(x=>x[0].toUpperCase()+x.slice(1)).join(', '):'None');s.textContent='Strong: '+(strong.length?strong.map(x=>x[0].toUpperCase()+x.slice(1)).join(', '):'None');}catch{n.textContent='Not found';t.innerHTML='';m.src='';w.textContent='';s.textContent='';}}
   i.addEventListener('keydown',e=>{if(e.key==='Enter')g();});
 </script>
-
-
