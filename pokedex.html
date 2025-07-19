@@ -1,0 +1,75 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Pokédex</title>
+<style>
+  body, html{margin:0;padding:0;width:100%;height:100%;background:#222;color:#fff;font-family:"SF Pro Display","SF Pro Text","Segoe UI",sans-serif;font-size:16px;}
+  .pokedex{max-width:360px;margin:2em auto;padding:1em;background:#f00;border:8px solid #333;border-radius:8px;box-shadow:0 0 12px rgba(0,0,0,.5);}
+  .pokedex h1{margin:0 0 .5em;font-size:1.5em;display:flex;align-items:center;justify-content:center;gap:.3em;}
+  .logo{width:1.2em;height:1.2em;fill:#fff;stroke:#000;stroke-width:4;}
+  .controls{display:flex;justify-content:center;gap:.5em;margin-bottom:.5em;}
+  .controls input{flex:1;padding:.75em;font-size:1em;border:2px solid #333;border-radius:4px;text-align:center;background:#fff;color:#000;}
+  .btn-go{padding:.75em 1.5em;font-size:1em;border:none;border-radius:4px;background:#333;color:#fff;cursor:pointer;transition:background .2s;}
+  .btn-go:hover{background:#555;}
+  .screen{background:#eee;color:#000;padding:1em;border:4px solid #333;border-radius:4px;display:flex;flex-direction:column;align-items:center;gap:1em;}
+  #n{margin:0;font-weight:bold;text-align:center;}
+  .display img{image-rendering:pixelated;width:min(40vw,128px);height:auto;}
+  .stats{display:flex;gap:.5em;flex-wrap:wrap;justify-content:center;width:100%;}
+  .strength,.weakness{background:#fff;padding:.5em;border:2px solid #333;border-radius:4px;font-size:.9em;min-width:6em;text-align:center;}
+  .strength{border-color:#090;}
+  .weakness{border-color:#900;}
+</style>
+<main class="pokedex">
+  <h1>
+    <svg class="logo" viewBox="0 0 64 64">
+      <circle cx="32" cy="32" r="30"/>
+      <path d="M2,32 h60"/>
+      <circle cx="32" cy="32" r="12"/>
+      <circle cx="32" cy="32" r="5" fill="#000"/>
+    </svg>
+    Pokédex
+  </h1>
+  <div class="controls">
+    <input id="i" type="text" placeholder="ID or Name">
+    <button class="btn-go" onclick="g()">Go</button>
+  </div>
+  <div class="screen">
+    <div class="display">
+      <p id="n"></p>
+      <img id="m" alt="">
+    </div>
+    <div class="stats">
+      <div id="s" class="strength"></div>
+      <div id="w" class="weakness"></div>
+    </div>
+  </div>
+</main>
+<script>
+ const i=document.getElementById('i'),
+       n=document.getElementById('n'),
+       m=document.getElementById('m'),
+       w=document.getElementById('w'),
+       s=document.getElementById('s');
+ async function g(){
+   let v=i.value.trim().toLowerCase();
+   if(!v) return;
+   try{
+     let r=await fetch('https://pokeapi.co/api/v2/pokemon/'+encodeURIComponent(v));
+     if(!r.ok) throw 0;
+     let j=await r.json();
+     n.textContent=j.name.replace(/^./,c=>c.toUpperCase());
+     m.src=j.sprites.front_default||'';
+     let types=j.types.map(t=>t.type.name),
+         data=await Promise.all(types.map(t=>fetch('https://pokeapi.co/api/v2/type/'+t).then(r=>r.json()))),
+         weak=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_from.map(x=>x.name)))],
+         strong=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_to.map(x=>x.name)))];
+     w.textContent='Weak: '+(weak.length?weak.map(c=>c.replace(/^./,x=>x.toUpperCase())).join(', '):'None');
+     s.textContent='Strong: '+(strong.length?strong.map(c=>c.replace(/^./,x=>x.toUpperCase())).join(', '):'None');
+   }catch{
+     n.textContent='Not found'; m.src=''; w.textContent=''; s.textContent='';
+   }
+ }
+ i.addEventListener('keydown',e=>{ if(e.key==='Enter') g(); });
+</script>
+
+
+
