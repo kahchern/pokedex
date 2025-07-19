@@ -85,6 +85,40 @@
 
   const n=document.getElementById('n'), t=document.getElementById('t'), m=document.getElementById('m'), w=document.getElementById('w'), s=document.getElementById('s');
   const typeColors={normal:'#A8A878',fire:'#F08030',water:'#6890F0',electric:'#F8D030',grass:'#78C850',ice:'#98D8D8',fighting:'#C03028',poison:'#A040A0',ground:'#E0C068',flying:'#A890F0',psychic:'#F85888',bug:'#A8B820',rock:'#B8A038',ghost:'#705898',dark:'#705848',dragon:'#7038F8',steel:'#B8B8D0',fairy:'#EE99AC'};
-  async function g(){const v=i.value.trim().toLowerCase();if(!v)return;try{const r=await fetch('https://pokeapi.co/api/v2/pokemon/'+encodeURIComponent(v));if(!r.ok)throw 0;const j=await r.json();n.textContent=j.name.replace(/^./,c=>c.toUpperCase());t.innerHTML=j.types.map(x=>{const c=typeColors[x.type.name]||'#ddd';return `<span class="type" style="background:${c};border:2px solid ${c}">${x.type.name}</span>`;}).join('');m.src=j.sprites.front_default||'';const data=await Promise.all(j.types.map(x=>fetch('https://pokeapi.co/api/v2/type/'+x.type.name).then(r=>r.json())));const weak=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_from.map(x=>x.name)))];const strong=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_to.map(x=>x.name)))];w.textContent='Weak: '+(weak.length?weak.map(x=>x[0].toUpperCase()+x.slice(1)).join(', '):'None');s.textContent='Strong: '+(strong.length?strong.map(x=>x[0].toUpperCase()+x.slice(1)).join(', '):'None');}catch{n.textContent='Not found';t.innerHTML='';m.src='';w.textContent='';s.textContent='';}}
+  async function g(){
+    const v=i.value.trim().toLowerCase();
+    if(!v) return;
+    // custom cat entry for #0 or 'nico'
+    if(v==='0' || v==='nico'){
+      n.textContent='Nico';
+      t.innerHTML=`
+        <span class="type" style="background:${typeColors.fighting};border:2px solid ${typeColors.fighting}">Fighting</span>
+        <span class="type" style="background:${typeColors.fairy};border:2px solid ${typeColors.fairy}">Fairy</span>
+      `;
+      m.src='images/cat0.png';
+      w.textContent='Weak: Crinkle ball, Cat nip, Water';
+      s.textContent='Strong: Angeli';
+      return;
+    }
+    try{
+      const r=await fetch('https://pokeapi.co/api/v2/pokemon/'+encodeURIComponent(v));
+      if(!r.ok) throw 0;
+      const j=await r.json();
+      n.textContent=j.name.replace(/^./,c=>c.toUpperCase());
+      t.innerHTML=j.types.map(x=>{const c=typeColors[x.type.name]||'#ddd';return `<span class="type" style="background:${c};border:2px solid ${c}">${x.type.name}</span>`;}).join('');
+      m.src=j.sprites.front_default||'';
+      const data=await Promise.all(j.types.map(x=>fetch('https://pokeapi.co/api/v2/type/'+x.type.name).then(r=>r.json())));
+      const weak=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_from.map(x=>x.name)))];
+      const strong=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_to.map(x=>x.name)))];
+      w.textContent='Weak: '+(weak.length?weak.map(x=>x[0].toUpperCase()+x.slice(1)).join(', '):'None');
+      s.textContent='Strong: '+(strong.length?strong.map(x=>x[0].toUpperCase()+x.slice(1)).join(', '):'None');
+    }catch{
+      n.textContent='Not found';
+      t.innerHTML='';
+      m.src='';
+      w.textContent='';
+      s.textContent='';
+    }
+  }
   i.addEventListener('keydown',e=>{if(e.key==='Enter')g();});
 </script>
