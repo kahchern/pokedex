@@ -138,7 +138,12 @@
   .strength strong,
   .weakness strong{color:#000!important}
 
-
+  /* Loading indicator */
+  .loading{
+    text-align:center;
+    color:#666;
+    font-style:italic;
+  }
 
   /* — MOBILE ADJUSTMENTS — */
   @media (max-width:480px){
@@ -196,8 +201,6 @@
       border-width:2px;
     }
     
-
-
     /* make each panel height: auto and improve spacing */
     .screen{
       padding:1em;
@@ -254,8 +257,6 @@
     .list li{
       padding:.6em .8em;
     }
-
-
   }
 </style>
 
@@ -274,8 +275,8 @@
   <div class="type-browser">
     <div class="types" id="type-list"></div>
     <div class="screen" id="type-screen" hidden>
-      <p id="type-name"></p>
-      <div class="stats">
+      <p id="type-name">Select a type above to see details</p>
+      <div class="stats" id="type-stats" style="display:none;">
         <div id="type-strong" class="strength"><strong>Strong:</strong></div>
         <div id="type-weak"   class="weakness"><strong>Weak:</strong></div>
       </div>
@@ -295,17 +296,16 @@
 
   <div class="screen">
     <div class="display">
-      <p id="n"></p>
+      <p id="n">Search for a Pokémon above</p>
       <div class="types" id="t"></div>
       <img id="m" alt="">
     </div>
-    <div class="stats">
+    <div class="stats" id="pokemon-stats" style="display:none;">
       <div id="s" class="strength"><strong>Strong:</strong></div>
       <div id="w" class="weakness"><strong>Weak:</strong></div>
     </div>
+    <div id="loading" class="loading" style="display:none;">Loading Pokémon data...</div>
   </div>
-
-
 </main>
 
 <script>
@@ -355,7 +355,7 @@ const typeChart = {
 
 const types = Object.keys(typeChart);
 let pokemonData = [];
-let areas = [];
+let isDataLoaded = false;
 
 // Initialize type browser
 function initTypes() {
@@ -380,6 +380,7 @@ function showTypeInfo(type, element) {
   const name = document.getElementById('type-name');
   const strong = document.getElementById('type-strong');
   const weak = document.getElementById('type-weak');
+  const statsContainer = document.getElementById('type-stats');
   
   // Set the background color of the type screen
   const typeColor = typeColors[type] || '#eee';
@@ -394,24 +395,77 @@ function showTypeInfo(type, element) {
   strong.innerHTML = '<strong>Strong:</strong> ' + (typeChart[type].strong.join(', ') || 'None');
   weak.innerHTML = '<strong>Weak:</strong> ' + (typeChart[type].weak.join(', ') || 'None');
   
+  // Show the stats container and the screen
+  statsContainer.style.display = 'flex';
   screen.hidden = false;
 }
 
-// Pokemon lookup functionality
+// Pokemon lookup functionality - Now loads ALL Pokémon
 async function loadPokemonData() {
+  if (isDataLoaded) return;
+  
+  const loading = document.getElementById('loading');
+  loading.style.display = 'block';
+  
   try {
-    for (let i = 1; i <= 151; i++) {
-      const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${i}`);
-      const pokemon = await response.json();
-      pokemonData.push({
-        id: pokemon.id,
-        name: pokemon.name,
-        types: pokemon.types.map(t => t.type.name),
-        sprite: pokemon.sprites.front_default
-      });
+    // First, get the total count of Pokémon from the species endpoint
+    const speciesResponse = await fetch('https://pokeapi.co/api/v2/pokemon-species?limit=1');
+    const speciesData = await speciesResponse.json();
+    const totalPokemon = speciesData.count;
+    
+    console.log(`Loading ${totalPokemon} Pokémon...`);
+    
+    // Load all Pokémon in batches to avoid overwhelming the API
+    const batchSize = 50;
+    const batches = Math.ceil(totalPokemon / batchSize);
+    
+    for (let batch = 0; batch < batches; batch++) {
+      const promises = [];
+      const start = batch * batchSize + 1;
+      const end = Math.min((batch + 1) * batchSize, totalPokemon);
+      
+      for (let i = start; i <= end; i++) {
+        promises.push(loadPokemon(i));
+      }
+      
+      const batchResults = await Promise.allSettled(promises);
+      const successfulPokemon = batchResults
+        .filter(result => result.status === 'fulfilled' && result.value)
+        .map(result => result.value);
+      
+      pokemonData.push(...successfulPokemon);
+      
+      console.log(`Loaded batch ${batch + 1}/${batches} - Total: ${pokemonData.length} Pokémon`);
     }
+    
+    // Sort by ID
+    pokemonData.sort((a, b) => a.id - b.id);
+    isDataLoaded = true;
+    
+    console.log(`Finished loading ${pokemonData.length} Pokémon`);
+    loading.style.display = 'none';
+    
   } catch (error) {
     console.error('Failed to load Pokemon data:', error);
+    loading.textContent = 'Failed to load Pokémon data. Please refresh the page.';
+  }
+}
+
+async function loadPokemon(id) {
+  try {
+    const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+    if (!response.ok) return null;
+    
+    const pokemon = await response.json();
+    return {
+      id: pokemon.id,
+      name: pokemon.name,
+      types: pokemon.types.map(t => t.type.name),
+      sprite: pokemon.sprites?.front_default || pokemon.sprites?.other?.['official-artwork']?.front_default
+    };
+  } catch (error) {
+    console.error(`Failed to load Pokemon ${id}:`, error);
+    return null;
   }
 }
 
@@ -425,7 +479,7 @@ function setupAutocomplete() {
     list.innerHTML = '';
     activeIndex = -1;
     
-    if (!value) {
+    if (!value || !isDataLoaded) {
       list.hidden = true;
       return;
     }
@@ -438,7 +492,7 @@ function setupAutocomplete() {
     if (matches.length > 0) {
       matches.forEach((pokemon, index) => {
         const li = document.createElement('li');
-        li.textContent = `${pokemon.id}. ${pokemon.name}`;
+        li.textContent = `#${pokemon.id} ${capitalizeWords(pokemon.name)}`;
         li.onclick = () => {
           input.value = pokemon.name;
           list.hidden = true;
@@ -491,6 +545,11 @@ function setupAutocomplete() {
 }
 
 async function g() {
+  if (!isDataLoaded) {
+    alert('Pokémon data is still loading. Please wait...');
+    return;
+  }
+
   const input = document.getElementById('i');
   const value = input.value.toLowerCase().trim();
   
@@ -512,12 +571,13 @@ async function g() {
     );
   }
 
+  const statsContainer = document.getElementById('pokemon-stats');
+
   if (!pokemon) {
-    document.getElementById('n').textContent = 'Pokemon not found';
+    document.getElementById('n').textContent = 'Pokémon not found';
     document.getElementById('t').innerHTML = '';
     document.getElementById('m').src = '';
-    document.getElementById('s').innerHTML = '<strong>Strong:</strong>';
-    document.getElementById('w').innerHTML = '<strong>Weak:</strong>';
+    statsContainer.style.display = 'none';
     return;
   }
 
@@ -552,6 +612,9 @@ async function g() {
     (strengths.size > 0 ? Array.from(strengths).join(', ') : 'None');
   document.getElementById('w').innerHTML = '<strong>Weak:</strong> ' + 
     (weaknesses.size > 0 ? Array.from(weaknesses).join(', ') : 'None');
+
+  // Show the stats container now that we have a Pokémon
+  statsContainer.style.display = 'flex';
 }
 
 // Utility function to capitalize words properly
@@ -575,15 +638,13 @@ function getContrastColor(hexColor) {
   return luminance > 0.5 ? '#000' : '#fff';
 }
 
-// Encounter search functionality
-
-
 // Initialize everything
 document.addEventListener('DOMContentLoaded', function() {
   initTypes();
-  loadPokemonData().then(() => {
-    setupAutocomplete();
-  });
+  setupAutocomplete();
+  
+  // Start loading Pokémon data in the background
+  loadPokemonData();
 });
 </script>
 </html>
