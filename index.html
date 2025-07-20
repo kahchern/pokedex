@@ -1,163 +1,189 @@
 <!doctype html>
+<html lang="en">
 <meta charset="utf-8">
 <title>kc's Pokédex</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-  /* reset + vars */
-  *, *::before, *::after { box-sizing:border-box }
-  :root { --gap:.9rem; --r:8px; font:16px/1.25 system-ui,sans-serif }
-  html, body { margin:0; padding:0; width:100%; height:100%; background:#222; color:#fff }
-  body { display:flex; justify-content:center; align-items:flex-start; padding:var(--gap) }
-  /* container */
-  .pokedex {
-    background:#f00;
-    color:#fff;
-    width:100%;
-    max-width:450px;
-    border:8px solid #333;
-    border-radius:var(--r);
-    box-shadow:0 0 12px rgba(0,0,0,.5);
-    display:flex;
-    flex-direction:column;
+  *,*::before,*::after { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    background: #222; color: #fff;
+    font-family: "SF Pro Display","SF Pro Text","Segoe UI",sans-serif;
   }
-  /* header */
+
+  .pokedex {
+    width:100%; max-width:450px;
+    margin:2em auto; padding:1em;
+    background:#f00; border:8px solid #333; border-radius:8px;
+    box-shadow:0 0 12px rgba(0,0,0,.5);
+    display:flex; flex-direction:column;
+  }
   .pokedex h1 {
-    margin:0;
-    padding:var(--gap);
-    font-size:1.6em;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:.4em;
+    margin:0 0 .5em; font-size:1.6em;
+    display:flex; align-items:center; justify-content:center; gap:.4em;
   }
   .logo {
-    width:1.4em;
-    height:1.4em;
-    fill:#fff;
-    stroke:#000;
-    stroke-width:4;
+    width:1.4em; height:1.4em;
+    fill:#fff; stroke:#000; stroke-width:4;
   }
-  /* controls */
+
+  /* separator line */
+  .separator {
+    border:1px solid #333;
+    margin:1em 0;
+    width:100%;
+  }
+
+  /* — Type Explorer — */
+  .type-browser { margin-bottom:1em; }
+  .type-browser .types {
+    display:flex; gap:.4em; flex-wrap:wrap; justify-content:center;
+  }
+  .type-browser .types .type {
+    cursor:pointer; user-select:none;
+    background:#ddd; color:#000;
+    padding:.2em .6em; border-radius:4px;
+    font-size:.9em; text-transform:capitalize;
+    transition: box-shadow .2s;
+  }
+  .type-browser .types .type.active {
+    box-shadow:0 0 0 3px #fff;
+  }
+  #type-screen {
+    margin-top:.7em;
+    background:#eee; color:#000;
+    border:4px solid #333; border-radius:4px;
+    padding:1em;
+    display:flex; flex-direction:column; align-items:center; gap:.5em;
+  }
+  #type-screen p {
+    margin:0; font-weight:bold; font-size:1.2em; text-align:center;
+  }
+  #type-screen .strength strong,
+  #type-screen .weakness strong {
+    font-weight:bold;
+  }
+
+  /* Top lookup controls */
+  .controls.lookup-controls {
+    display:flex; gap:.5em;
+    margin:.7em 0; position:relative;
+    justify-content:flex-start;
+  }
+  .lookup-controls .autocomplete { flex:4 1 150px; }
+  .lookup-controls button          { flex:1 1 80px; }
+
   .controls {
-    display:flex;
-    gap:var(--gap);
-    padding:var(--gap);
+    display:flex; gap:.5em; margin-bottom:.7em; position:relative;
   }
-  .autocomplete { position:relative; flex:1 }
   .controls input {
-    flex:1;
-    padding:.6em;
-    font-size:1em;
-    border:2px solid #333;
-    border-radius:var(--r);
+    flex:1; padding:.6em; font-size:1em;
+    border:2px solid #333; border-radius:4px;
     text-align:center;
   }
-  .btn-go {
-    padding:.6em 1rem;
-    font-size:1em;
-    border:none;
-    border-radius:var(--r);
-    background:#333;
-    color:#fff;
-    cursor:pointer;
+  .controls select {
+    padding:.6em; font-size:1em;
+    border:2px solid #333; border-radius:4px;
+    background:#fff; color:#000;
+    text-transform:capitalize;
+  }
+  .autocomplete { position:relative; flex:1; }
+  .controls button {
+    padding:0 .8em; font-size:1em;
+    border:none; border-radius:4px;
+    background:#333; color:#fff; cursor:pointer;
   }
   .list {
-    position:absolute;
-    top:100%; left:0; right:0;
-    background:#fff;
-    color:#000;
-    max-height:150px;
-    overflow:auto;
-    border:1px solid #333;
-    margin:0; padding:0;
-    list-style:none;
-    z-index:1;
+    position:absolute; top:100%; left:0; right:0;
+    background:#fff; color:#000;
+    max-height:150px; overflow:auto;
+    border:1px solid #333; margin:0; padding:0;
+    list-style:none; z-index:1;
   }
-  .list li { padding:.4em .6em; cursor:pointer }
-  .list li:hover { background:#ddd }
-  .list li.active { background:#bbb }
-  /* display */
+  .list li { padding:.4em .6em; cursor:pointer; }
+  .list li:hover { background:#ddd; }
+  .list li.active { background:#bbb; }
+
+  /* Pokédex screen */
   .screen {
-    background:#eee;
-    color:#000;
-    padding:var(--gap);
-    border-top:2px solid #333;
-    border-radius:0 0 var(--r) var(--r);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:var(--gap);
+    background:#eee; color:#000;
+    padding:.5em;                    /* shrink vertical padding */
+    border:4px solid #333; border-radius:4px;
+    display:flex; flex-direction:column; align-items:center;
+    gap:.5em;                        /* shrink gap between display & stats */
+  }
+  .display {
+    width:100%; text-align:center;
   }
   .display p {
-    margin:0;
-    font-weight:bold;
-    font-size:1.3em;
+    margin:0 0 .4em;                /* shrink gap below name */
+    font-weight:bold; font-size:1.3em;
     text-align:center;
   }
   .types {
-    display:flex;
-    gap:.5em;
-    flex-wrap:wrap;
-    justify-content:center;
-    margin-bottom:.5em;
+    display:flex; gap:.5em; flex-wrap:wrap; justify-content:center;
+    margin-bottom:.4em;              /* shrink gap below types */
   }
   .type {
-    background:#ddd;
-    color:#000;
-    padding:.2em .6em;
-    border-radius:var(--r);
-    font-size:.9em;
-    text-transform:capitalize;
+    background:#ddd; color:#000;
+    padding:.2em .6em; border-radius:4px;
+    font-size:.9em; text-transform:capitalize;
   }
   .display img {
+    display:block; margin:0 auto;
     image-rendering:pixelated;
-    width:min(60vw,128px);
-    height:auto;
+    width:60%; max-width:180px; height:auto;
   }
   .stats {
-    display:flex;
-    gap:var(--gap);
-    justify-content:center;
-    width:100%;
+    display:flex; gap:.5em; justify-content:center; width:100%;
   }
   .strength, .weakness {
-    flex:1;
-    background:#fff;
-    padding:.5em;
-    border:2px solid #333;
-    border-radius:var(--r);
-    font-size:.9em;
-    text-align:center;
+    flex:1 1 140px; background:#fff;
+    padding:.5em; border:2px solid #333;
+    border-radius:4px; font-size:.9em; text-align:center;
   }
   .strength { border-color:#090 }
   .weakness { border-color:#900 }
-  /* mobile full-screen */
+
+  /* Encounter controls */
+  .encounters-controls {
+    display:flex; gap:.5em; flex-wrap:wrap; margin-top:1rem;
+  }
+  .encounters-controls #game {
+    flex:0 1 100px; min-width:0;
+  }
+  .encounters-controls .autocomplete {
+    flex:1 1 150px; min-width:0;
+  }
+  .encounters-controls button {
+    flex:0 0 auto;
+  }
+
   @media (max-width:480px) {
-    body { padding:0 }
     .pokedex {
-      position:fixed;
-      top:0; left:0;
+      position:fixed; top:0; left:0;
       width:100vw; height:100vh;
-      margin:0; padding:var(--gap);
-      border-width:6px;
-      border-radius:0;
+      margin:0; padding:.5em;
+      border-width:6px; border-radius:0;
     }
-    .pokedex h1 { font-size:1.4em; margin-bottom:.4em }
-    .controls {
-      flex-direction:column;
-      gap:.4em;
-      margin-bottom:.4em;
+    .pokedex h1 { font-size:1.4em; margin-bottom:.4em; }
+    .controls, .controls.lookup-controls {
+      margin-bottom:.4em; flex-direction:column; gap:.4em;
     }
-    .controls input,
-    .btn-go { width:100% }
+    .controls input, .controls select, .controls button {
+      width:100%; padding:.6em; font-size:1em;
+    }
+    .encounters-controls {
+      flex-direction:column; gap:.4em; margin-top:.8em;
+    }
     .screen {
-      flex:1;
-      padding:.8em;
-      overflow-y:auto;
-      gap:.8em;
+      flex:1; padding:.8em; overflow-y:auto; gap:.8em;
     }
-    .display img { width:min(80vw,128px) }
-    .stats { flex-direction:column; gap:.4em }
+    .display p { font-size:1.2em; margin-bottom:.6em; }
+    .types { margin-bottom:.6em; }
+    .display img { width:60%; max-width:140px; }
+    .stats { flex-direction:column; gap:.4em; }
   }
 </style>
 
@@ -171,13 +197,30 @@
     </svg>
     kc's Pokédex
   </h1>
-  <div class="controls">
+
+  <!-- Type Explorer -->
+  <div class="type-browser">
+    <div class="types" id="type-list"></div>
+    <div class="screen" id="type-screen" hidden>
+      <p id="type-name"></p>
+      <div class="stats">
+        <div id="type-strong" class="strength"><strong>Strong:</strong></div>
+        <div id="type-weak"   class="weakness"><strong>Weak:</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="separator">
+
+  <!-- Pokémon Lookup -->
+  <div class="controls lookup-controls">
     <div class="autocomplete">
       <input id="i" type="text" placeholder="ID or Name" autocomplete="off">
       <ul id="list" class="list" hidden></ul>
     </div>
-    <button class="btn-go" onclick="g()">Go</button>
+    <button onclick="g()">Go</button>
   </div>
+
   <div class="screen">
     <div class="display">
       <p id="n"></p>
@@ -185,109 +228,276 @@
       <img id="m" alt="">
     </div>
     <div class="stats">
-      <div id="s" class="strength"></div>
-      <div id="w" class="weakness"></div>
+      <div id="s" class="strength"><strong>Strong:</strong></div>
+      <div id="w" class="weakness"><strong>Weak:</strong></div>
     </div>
+  </div>
+
+  <hr class="separator">
+
+  <!-- Encounter Search -->
+  <div class="controls encounters-controls">
+    <select id="game">
+      <option value="">Game</option>
+      <option value="red">Red</option>
+      <option value="blue">Blue</option>
+      <option value="yellow">Yellow</option>
+      <option value="gold">Gold</option>
+      <option value="silver">Silver</option>
+      <option value="crystal">Crystal</option>
+      <option value="ruby">Ruby</option>
+      <option value="sapphire">Sapphire</option>
+      <option value="emerald">Emerald</option>
+      <option value="firered">FireRed</option>
+      <option value="leafgreen">LeafGreen</option>
+    </select>
+    <div class="autocomplete">
+      <input id="area" type="text" placeholder="Area (e.g. Route 1)" autocomplete="off">
+      <ul id="area-list" class="list" hidden></ul>
+    </div>
+    <button id="btn-enc" class="btn-go">Search</button>
+  </div>
+
+  <div class="screen" id="encounters-screen" hidden>
+    <div id="encounters" style="display:flex;flex-wrap:wrap;gap:.5em;justify-content:center;width:100%;"></div>
   </div>
 </main>
 
 <script>
-  const i=document.getElementById('i'), list=document.getElementById('list');
-  let names=[], suggestions=[], selectedIndex=-1;
-  fetch('https://pokeapi.co/api/v2/pokemon?limit=1010')
-    .then(r=>r.json()).then(d=>names=d.results.map(x=>x.name));
-  i.addEventListener('input',()=>{
-    const v=i.value.toLowerCase();
-    suggestions=v?names.filter(n=>n.startsWith(v)).slice(0,5):[];
-    list.innerHTML=suggestions.map(s=>`<li>${s}</li>`).join('');
-    list.hidden=!suggestions.length;
-    selectedIndex=-1;
+const typeColors = {
+  normal:'#A8A878', fire:'#F08030', water:'#6890F0',
+  electric:'#F8D030', grass:'#78C850', ice:'#98D8D8',
+  fighting:'#C03028', poison:'#A040A0', ground:'#E0C068',
+  flying:'#A890F0', psychic:'#F85888', bug:'#A8B820',
+  rock:'#B8A038', ghost:'#705898', dark:'#705848',
+  dragon:'#7038F8', steel:'#B8B8D0', fairy:'#EE99AC'
+};
+
+// — populate Type Explorer —
+const typeList = document.getElementById('type-list');
+Object.entries(typeColors).forEach(([type,color]) => {
+  const span = document.createElement('span');
+  span.className = 'type';
+  span.textContent = type;
+  span.style.background = color;
+  span.style.border     = `2px solid ${color}`;
+  span.addEventListener('click', () => {
+    // highlight selected type
+    document.querySelectorAll('#type-list .type').forEach(el => el.classList.remove('active'));
+    span.classList.add('active');
+    showTypeInfo(type);
   });
-  list.addEventListener('click',e=>{
-    if(e.target.tagName==='LI'){
-      i.value=e.target.textContent;
-      list.hidden=true;
-      g();
-    }
+  typeList.append(span);
+});
+
+// — show type strengths/weaknesses & color panel —
+async function showTypeInfo(type) {
+  const scr       = document.getElementById('type-screen');
+  const name      = document.getElementById('type-name');
+  const strongBox = document.getElementById('type-strong');
+  const weakBox   = document.getElementById('type-weak');
+  try {
+    const r = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
+    const j = await r.json();
+    const strong = j.damage_relations.double_damage_to.map(x=>x.name);
+    const weak   = j.damage_relations.double_damage_from.map(x=>x.name);
+
+    name.textContent = type[0].toUpperCase() + type.slice(1);
+    strongBox.innerHTML = `<strong>Strong:</strong> ${strong.map(s=>s[0].toUpperCase()+s.slice(1)).join(', ')||'None'}`;
+    weakBox  .innerHTML = `<strong>Weak:</strong>   ${weak.map(w=>w[0].toUpperCase()+w.slice(1)).join(', ')||'None'}`;
+
+    scr.style.background = typeColors[type];
+    scr.style.color      = '#000';
+    scr.hidden = false;
+  } catch {
+    name.textContent = 'Error';
+    scr.hidden = false;
+  }
+}
+
+// — Pokémon lookup autocomplete & display —
+const i = document.getElementById('i'), list = document.getElementById('list');
+let names = [], suggestions = [], selectedIndex = -1;
+fetch('https://pokeapi.co/api/v2/pokemon?limit=1010')
+  .then(r=>r.json()).then(d=>names = d.results.map(x=>x.name));
+i.addEventListener('input', () => {
+  const v = i.value.toLowerCase();
+  suggestions = v ? names.filter(n=>n.startsWith(v)).slice(0,5) : [];
+  list.innerHTML = suggestions.map(s=>`<li>${s}</li>`).join('');
+  list.hidden = !suggestions.length;
+  selectedIndex = -1;
+});
+list.addEventListener('click', e => {
+  if (e.target.tagName==='LI') {
+    i.value = e.target.textContent;
+    list.hidden = true;
+    g();
+  }
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('.autocomplete')) list.hidden = true;
+});
+i.addEventListener('keydown', e => {
+  if (list.hidden) return;
+  if (e.key==='ArrowDown') {
+    e.preventDefault();
+    selectedIndex = Math.min(selectedIndex+1, suggestions.length-1);
+    updateActive();
+  } else if (e.key==='ArrowUp') {
+    e.preventDefault();
+    selectedIndex = Math.max(selectedIndex-1, 0);
+    updateActive();
+  } else if (e.key==='Enter' && selectedIndex>-1) {
+    e.preventDefault();
+    i.value = suggestions[selectedIndex];
+    list.hidden = true;
+    g();
+  }
+});
+function updateActive() {
+  Array.from(list.children).forEach((li,i)=>{
+    li.classList.toggle('active', i===selectedIndex);
+    if (i===selectedIndex) li.scrollIntoView({block:'nearest'});
   });
-  document.addEventListener('click',e=>{
-    if(!e.target.closest('.autocomplete')) list.hidden=true;
+  if (selectedIndex>-1) i.value = suggestions[selectedIndex];
+}
+
+const n = document.getElementById('n'),
+      t = document.getElementById('t'),
+      m = document.getElementById('m'),
+      w = document.getElementById('w'),
+      s = document.getElementById('s');
+
+async function g(){
+  const v = i.value.trim().toLowerCase();
+  if (!v) return;
+  if (v==='0'||v==='nico') {
+    n.textContent='Nico';
+    t.innerHTML=`
+      <span class="type" style="background:${typeColors.fighting};border:2px solid ${typeColors.fighting}">Fighting</span>
+      <span class="type" style="background:${typeColors.fairy};   border:2px solid ${typeColors.fairy}">Fairy</span>`;
+    m.src='images/cat0.png';
+    w.innerHTML='<strong>Weak:</strong> Crinkle ball, Cat nip, Water';
+    s.innerHTML='<strong>Strong:</strong> Angeli';
+    return;
+  }
+  try {
+    const r = await fetch('https://pokeapi.co/api/v2/pokemon/'+encodeURIComponent(v));
+    if (!r.ok) throw 0;
+    const j = await r.json();
+    n.textContent = j.name.replace(/^./,c=>c.toUpperCase());
+    t.innerHTML = j.types.map(x=>{
+      const c = typeColors[x.type.name]||'#ddd';
+      return `<span class="type" style="background:${c};border:2px solid ${c}">${x.type.name}</span>`;
+    }).join('');
+    m.src = j.sprites.front_default||'';
+    const data = await Promise.all(
+      j.types.map(x=>fetch('https://pokeapi.co/api/v2/type/'+x.type.name).then(r=>r.json()))
+    );
+    const weakArr   = [...new Set(data.flatMap(d=>d.damage_relations.double_damage_from.map(x=>x.name)))];
+    const strongArr = [...new Set(data.flatMap(d=>d.damage_relations.double_damage_to.map(x=>x.name)))];
+    w.innerHTML = `<strong>Weak:</strong>   ${weakArr.map(x=>x[0].toUpperCase()+x.slice(1)).join(', ')||'None'}`;
+    s.innerHTML = `<strong>Strong:</strong> ${strongArr.map(x=>x[0].toUpperCase()+x.slice(1)).join(', ')||'None'}`;
+  } catch {
+    n.textContent='Not found'; t.innerHTML=''; m.src=''; w.innerHTML=''; s.innerHTML='';
+  }
+}
+
+// — Encounters autocomplete & display —
+const areaInput = document.getElementById('area'),
+      areaList  = document.getElementById('area-list');
+let areaNames = [], areaSuggestions = [], areaSelIdx = -1, selectedAreaSlug = null;
+fetch('https://pokeapi.co/api/v2/location-area?limit=1000')
+  .then(r=>r.json()).then(d=>areaNames = d.results.map(x=>x.name));
+areaInput.addEventListener('input', ()=>{
+  selectedAreaSlug = null;
+  const v = areaInput.value.trim().toLowerCase();
+  areaSuggestions = v
+    ? areaNames.filter(n=>n.replace(/-/g,' ').toLowerCase().includes(v)).slice(0,5)
+    : [];
+  areaList.innerHTML = areaSuggestions.map(n=>{
+    const lbl = n.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    return `<li data-slug="${n}">${lbl}</li>`;
+  }).join('');
+  areaList.hidden = !areaSuggestions.length;
+  areaSelIdx = -1;
+});
+areaList.addEventListener('click', e=>{
+  if (e.target.tagName==='LI') {
+    selectedAreaSlug = e.target.dataset.slug;
+    areaInput.value = e.target.textContent;
+    areaList.hidden = true;
+  }
+});
+document.addEventListener('click', e=>{
+  if (!e.target.closest('.encounters-controls') && !e.target.closest('.autocomplete'))
+    areaList.hidden = true;
+});
+areaInput.addEventListener('keydown', e=>{
+  if (areaList.hidden) return;
+  if (e.key==='ArrowDown') {
+    e.preventDefault();
+    areaSelIdx = Math.min(areaSelIdx+1, areaSuggestions.length-1);
+    updateArea();
+  } else if (e.key==='ArrowUp') {
+    e.preventDefault();
+    areaSelIdx = Math.max(areaSelIdx-1, 0);
+    updateArea();
+  } else if (e.key==='Enter' && areaSelIdx>-1) {
+    e.preventDefault();
+    const li = areaList.children[areaSelIdx];
+    selectedAreaSlug = li.dataset.slug;
+    areaInput.value = li.textContent;
+    areaList.hidden = true;
+  }
+});
+function updateArea(){
+  Array.from(areaList.children).forEach((li,i)=>{
+    li.classList.toggle('active', i===areaSelIdx);
+    if (i===areaSelIdx) li.scrollIntoView({block:'nearest'});
   });
-  i.addEventListener('keydown',e=>{
-    if(list.hidden) return;
-    if(e.key==='ArrowDown'){
-      e.preventDefault();
-      selectedIndex=Math.min(selectedIndex+1,suggestions.length-1);
-      updateActive();
-    } else if(e.key==='ArrowUp'){
-      e.preventDefault();
-      selectedIndex=Math.max(selectedIndex-1,0);
-      updateActive();
-    } else if(e.key==='Enter'&&selectedIndex>-1){
-      e.preventDefault();
-      i.value=suggestions[selectedIndex];
-      list.hidden=true;
-      g();
-    }
-  });
-  function updateActive(){
-    Array.from(list.children).forEach((li,i)=>{
-      li.classList.toggle('active',i===selectedIndex);
-      if(i===selectedIndex) li.scrollIntoView({block:'nearest'});
+  if (areaSelIdx>-1) {
+    areaInput.value = areaList.children[areaSelIdx].textContent;
+    selectedAreaSlug = areaSuggestions[areaSelIdx];
+  }
+}
+
+// allow Enter in the area field to trigger a search
+areaInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    showEncounters();
+  }
+});
+
+document.getElementById('btn-enc').addEventListener('click', showEncounters);
+async function showEncounters(){
+  const game  = document.getElementById('game').value;
+  const label = areaInput.value.trim();
+  if (!game || !label) return;
+  document.getElementById('encounters-screen').hidden = false;
+  const slug = selectedAreaSlug || label.toLowerCase().replace(/ /g,'-');
+  try {
+    const r    = await fetch(`https://pokeapi.co/api/v2/location-area/${encodeURIComponent(slug)}`);
+    const data = await r.json();
+    const encs = data.pokemon_encounters.filter(e=>
+      e.version_details.some(v=>v.version.name===game)
+    );
+    const uniq = [...new Set(encs.map(e=>e.pokemon.name))];
+    const cont = document.getElementById('encounters');
+    cont.innerHTML = '';
+    uniq.forEach(name=>{
+      const url = data.pokemon_encounters.find(e=>e.pokemon.name===name).pokemon.url;
+      const id  = url.split('/').slice(-2)[0];
+      const cap = name.replace(/^./,c=>c.toUpperCase());
+      cont.innerHTML += `
+        <div style="text-align:center;font-size:.9em;">
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png"><br>${cap}
+        </div>`;
     });
-    if(selectedIndex>-1) i.value=suggestions[selectedIndex];
+  } catch {
+    document.getElementById('encounters').innerHTML = 'Error loading encounters';
   }
-
-  const n=document.getElementById('n'),
-        t=document.getElementById('t'),
-        m=document.getElementById('m'),
-        w=document.getElementById('w'),
-        s=document.getElementById('s');
-  const typeColors={
-    normal:'#A8A878',fire:'#F08030',water:'#6890F0',electric:'#F8D030',
-    grass:'#78C850',ice:'#98D8D8',fighting:'#C03028',poison:'#A040A0',
-    ground:'#E0C068',flying:'#A890F0',psychic:'#F85888',bug:'#A8B820',
-    rock:'#B8A038',ghost:'#705898',dark:'#705848',dragon:'#7038F8',
-    steel:'#B8B8D0',fairy:'#EE99AC'
-  };
-
-  async function g(){
-    const v=i.value.trim().toLowerCase();
-    if(!v) return;
-    if(v==='0'||v==='nico'){
-      n.textContent='Nico';
-      t.innerHTML=`
-        <span class="type" style="background:${typeColors.fighting};border:2px solid ${typeColors.fighting}">Fighting</span>
-        <span class="type" style="background:${typeColors.fairy};border:2px solid ${typeColors.fairy}">Fairy</span>
-      `;
-      m.src='images/cat0.png';
-      w.textContent='Weak: Crinkle ball, Cat nip, Water';
-      s.textContent='Strong: Angeli';
-      return;
-    }
-    try {
-      const r=await fetch('https://pokeapi.co/api/v2/pokemon/'+encodeURIComponent(v));
-      if(!r.ok) throw 0;
-      const j=await r.json();
-      n.textContent=j.name.replace(/^./,c=>c.toUpperCase());
-      t.innerHTML=j.types.map(x=>{
-        const c=typeColors[x.type.name]||'#ddd';
-        return `<span class="type" style="background:${c};border:2px solid ${c}">${x.type.name}</span>`;
-      }).join('');
-      m.src=j.sprites.front_default||'';
-      const data=await Promise.all(
-        j.types.map(x=>fetch('https://pokeapi.co/api/v2/type/'+x.type.name).then(r=>r.json()))
-      );
-      const weak=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_from.map(x=>x.name)))];
-      const strong=[...new Set(data.flatMap(d=>d.damage_relations.double_damage_to.map(x=>x.name)))];
-      w.textContent='Weak: '+(weak.length?weak.map(x=>x[0].toUpperCase()+x.slice(1)).join(', '):'None');
-      s.textContent='Strong: '+(strong.length?strong.map(x=>x[0].toUpperCase()+x.slice(1)).join(', '):'None');
-    } catch {
-      n.textContent='Not found';
-      t.innerHTML='';
-      m.src='';
-      w.textContent='';
-      s.textContent='';
-    }
-  }
+}
 </script>
+</html>
