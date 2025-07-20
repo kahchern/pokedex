@@ -4,186 +4,71 @@
 <title>kc's Pokédex</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-  *,*::before,*::after { box-sizing: border-box; }
-  html, body {
-    margin: 0; padding: 0;
-    width: 100%; height: 100%;
-    background: #222; color: #fff;
-    font-family: "SF Pro Display","SF Pro Text","Segoe UI",sans-serif;
-  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0;width:100%;height:100%;background:#222;color:#fff;font-family:"SF Pro Display","SF Pro Text","Segoe UI",sans-serif}
+  .pokedex{width:100%;max-width:450px;margin:2em auto;padding:1em;background:#f00;border:8px solid #333;border-radius:8px;box-shadow:0 0 12px rgba(0,0,0,.5);display:flex;flex-direction:column}
+  .pokedex h1{margin:0 0 .5em;font-size:1.6em;display:flex;align-items:center;justify-content:center;gap:.4em}
+  .logo{width:1.4em;height:1.4em;fill:#fff;stroke:#000;stroke-width:4}
 
-  .pokedex {
-    width:100%; max-width:450px;
-    margin:2em auto; padding:1em;
-    background:#f00; border:8px solid #333; border-radius:8px;
-    box-shadow:0 0 12px rgba(0,0,0,.5);
-    display:flex; flex-direction:column;
-  }
-  .pokedex h1 {
-    margin:0 0 .5em; font-size:1.6em;
-    display:flex; align-items:center; justify-content:center; gap:.4em;
-  }
-  .logo {
-    width:1.4em; height:1.4em;
-    fill:#fff; stroke:#000; stroke-width:4;
-  }
+  /* separator */
+  .separator{border:1px solid #333;margin:1em 0;width:100%}
 
-  /* separator line */
-  .separator {
-    border:1px solid #333;
-    margin:1em 0;
-    width:100%;
-  }
+  /* Type Explorer */
+  .type-browser{margin-bottom:1em}
+  .type-browser .types{display:flex;gap:.4em;flex-wrap:wrap;justify-content:center}
+  .type-browser .types .type{cursor:pointer;user-select:none;background:#ddd;color:#000;padding:.2em .6em;border-radius:4px;font-size:.9em;text-transform:capitalize;transition:box-shadow .2s}
+  .type-browser .types .type.active{box-shadow:0 0 0 3px #fff}
+  #type-screen{margin-top:.7em;background:#eee;color:#000;border:4px solid #333;border-radius:4px;padding:1em;display:flex;flex-direction:column;align-items:center;gap:.5em}
+  #type-screen p{margin:0;font-weight:bold;font-size:1.2em;text-align:center}
+  #type-screen .strength strong,#type-screen .weakness strong{font-weight:bold}
 
-  /* — Type Explorer — */
-  .type-browser { margin-bottom:1em; }
-  .type-browser .types {
-    display:flex; gap:.4em; flex-wrap:wrap; justify-content:center;
-  }
-  .type-browser .types .type {
-    cursor:pointer; user-select:none;
-    background:#ddd; color:#000;
-    padding:.2em .6em; border-radius:4px;
-    font-size:.9em; text-transform:capitalize;
-    transition: box-shadow .2s;
-  }
-  .type-browser .types .type.active {
-    box-shadow:0 0 0 3px #fff;
-  }
-  #type-screen {
-    margin-top:.7em;
-    background:#eee; color:#000;
-    border:4px solid #333; border-radius:4px;
-    padding:1em;
-    display:flex; flex-direction:column; align-items:center; gap:.5em;
-  }
-  #type-screen p {
-    margin:0; font-weight:bold; font-size:1.2em; text-align:center;
-  }
-  #type-screen .strength strong,
-  #type-screen .weakness strong {
-    font-weight:bold;
-  }
+  /* lookup controls */
+  .controls.lookup-controls{display:flex;gap:.5em;margin:.7em 0;position:relative;justify-content:flex-start}
+  .lookup-controls .autocomplete{flex:4 1 150px}
+  .lookup-controls button       {flex:1 1 80px}
 
-  /* Top lookup controls */
-  .controls.lookup-controls {
-    display:flex; gap:.5em;
-    margin:.7em 0; position:relative;
-    justify-content:flex-start;
-  }
-  .lookup-controls .autocomplete { flex:4 1 150px; }
-  .lookup-controls button          { flex:1 1 80px; }
+  .controls{display:flex;gap:.5em;margin-bottom:.7em;position:relative}
+  .controls input{flex:1;padding:.6em;font-size:1em;border:2px solid #333;border-radius:4px;text-align:center}
+  .controls select{padding:.6em;font-size:1em;border:2px solid #333;border-radius:4px;background:#fff;color:#000;text-transform:capitalize}
+  .autocomplete{position:relative;flex:1}
+  .controls button{padding:0 .8em;font-size:1em;border:none;border-radius:4px;background:#333;color:#fff;cursor:pointer}
+  .list{position:absolute;top:100%;left:0;right:0;background:#fff;color:#000;max-height:150px;overflow:auto;border:1px solid #333;margin:0;padding:0;list-style:none;z-index:1}
+  .list li{padding:.4em .6em;cursor:pointer}
+  .list li:hover{background:#ddd}
+  .list li.active{background:#bbb}
 
-  .controls {
-    display:flex; gap:.5em; margin-bottom:.7em; position:relative;
-  }
-  .controls input {
-    flex:1; padding:.6em; font-size:1em;
-    border:2px solid #333; border-radius:4px;
-    text-align:center;
-  }
-  .controls select {
-    padding:.6em; font-size:1em;
-    border:2px solid #333; border-radius:4px;
-    background:#fff; color:#000;
-    text-transform:capitalize;
-  }
-  .autocomplete { position:relative; flex:1; }
-  .controls button {
-    padding:0 .8em; font-size:1em;
-    border:none; border-radius:4px;
-    background:#333; color:#fff; cursor:pointer;
-  }
-  .list {
-    position:absolute; top:100%; left:0; right:0;
-    background:#fff; color:#000;
-    max-height:150px; overflow:auto;
-    border:1px solid #333; margin:0; padding:0;
-    list-style:none; z-index:1;
-  }
-  .list li { padding:.4em .6em; cursor:pointer; }
-  .list li:hover { background:#ddd; }
-  .list li.active { background:#bbb; }
+  /* default screen */
+  .screen{background:#eee;color:#000;padding:1em;border:4px solid #333;border-radius:4px;display:flex;flex-direction:column;align-items:center;gap:1em}
+  .display{width:100%;text-align:center}
+  .display p{margin:0 0 .8em;font-weight:bold;font-size:1.3em;text-align:center}
+  .types{display:flex;gap:.5em;flex-wrap:wrap;justify-content:center;margin-bottom:.5em}
+  .type{background:#ddd;color:#000;padding:.2em .6em;border-radius:4px;font-size:.9em;text-transform:capitalize}
+  .display img{display:block;margin:0 auto;image-rendering:pixelated;width:75%;max-width:240px;height:auto}
+  .stats{display:flex;gap:.5em;justify-content:center;width:100%}
+  .strength,.weakness{flex:1 1 140px;background:#fff;padding:.5em;border:2px solid #333;border-radius:4px;font-size:.9em;text-align:center}
+  .strength{border-color:#090}
+  .weakness{border-color:#900}
 
-  /* Pokédex screen */
-  .screen {
-    background:#eee; color:#000;
-    padding:.5em;                    /* shrink vertical padding */
-    border:4px solid #333; border-radius:4px;
-    display:flex; flex-direction:column; align-items:center;
-    gap:.5em;                        /* shrink gap between display & stats */
-  }
-  .display {
-    width:100%; text-align:center;
-  }
-  .display p {
-    margin:0 0 .4em;                /* shrink gap below name */
-    font-weight:bold; font-size:1.3em;
-    text-align:center;
-  }
-  .types {
-    display:flex; gap:.5em; flex-wrap:wrap; justify-content:center;
-    margin-bottom:.4em;              /* shrink gap below types */
-  }
-  .type {
-    background:#ddd; color:#000;
-    padding:.2em .6em; border-radius:4px;
-    font-size:.9em; text-transform:capitalize;
-  }
-  .display img {
-    display:block; margin:0 auto;
-    image-rendering:pixelated;
-    width:60%; max-width:180px; height:auto;
-  }
-  .stats {
-    display:flex; gap:.5em; justify-content:center; width:100%;
-  }
-  .strength, .weakness {
-    flex:1 1 140px; background:#fff;
-    padding:.5em; border:2px solid #333;
-    border-radius:4px; font-size:.9em; text-align:center;
-  }
-  .strength { border-color:#090 }
-  .weakness { border-color:#900 }
+  /* encounters */
+  .encounters-controls{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1rem}
+  .encounters-controls #game{flex:0 1 100px;min-width:0}
+  .encounters-controls .autocomplete{flex:1 1 150px;min-width:0}
+  .encounters-controls button{flex:0 0 auto}
 
-  /* Encounter controls */
-  .encounters-controls {
-    display:flex; gap:.5em; flex-wrap:wrap; margin-top:1rem;
-  }
-  .encounters-controls #game {
-    flex:0 1 100px; min-width:0;
-  }
-  .encounters-controls .autocomplete {
-    flex:1 1 150px; min-width:0;
-  }
-  .encounters-controls button {
-    flex:0 0 auto;
-  }
-
-  @media (max-width:480px) {
-    .pokedex {
-      position:fixed; top:0; left:0;
-      width:100vw; height:100vh;
-      margin:0; padding:.5em;
-      border-width:6px; border-radius:0;
-    }
-    .pokedex h1 { font-size:1.4em; margin-bottom:.4em; }
-    .controls, .controls.lookup-controls {
-      margin-bottom:.4em; flex-direction:column; gap:.4em;
-    }
-    .controls input, .controls select, .controls button {
-      width:100%; padding:.6em; font-size:1em;
-    }
-    .encounters-controls {
-      flex-direction:column; gap:.4em; margin-top:.8em;
-    }
-    .screen {
-      flex:1; padding:.8em; overflow-y:auto; gap:.8em;
-    }
-    .display p { font-size:1.2em; margin-bottom:.6em; }
-    .types { margin-bottom:.6em; }
-    .display img { width:60%; max-width:140px; }
-    .stats { flex-direction:column; gap:.4em; }
+  @media (max-width:480px){
+    /* allow page scroll and remove fixed height */
+    .pokedex{position:relative;width:100vw;height:auto;margin:0 auto;padding:.5em;border-width:6px;border-radius:0;overflow-y:auto;max-height:100vh}
+    .pokedex h1{font-size:1.4em;margin-bottom:.4em}
+    /* stack all control rows */
+    .controls, .controls.lookup-controls{margin-bottom:.4em;flex-direction:column;gap:.4em}
+    .controls input, .controls select, .controls button{width:100%;padding:.4em .6em;font-size:1em}
+    .encounters-controls{flex-direction:column;gap:.4em;margin-top:.8em}
+    /* let each .screen size to content, not flex-grow */
+    .screen{padding:.8em;overflow-y:auto;gap:.8em}
+    .display p{font-size:1.2em;margin-bottom:.6em}
+    .types{margin-bottom:.6em}
+    .display img{width:60%;max-width:180px}
+    .stats{flex-direction:column;gap:.4em}
   }
 </style>
 
@@ -255,7 +140,7 @@
       <input id="area" type="text" placeholder="Area (e.g. Route 1)" autocomplete="off">
       <ul id="area-list" class="list" hidden></ul>
     </div>
-    <button id="btn-enc" class="btn-go">Search</button>
+    <button id="btn-enc">Search</button>
   </div>
 
   <div class="screen" id="encounters-screen" hidden>
@@ -265,238 +150,145 @@
 
 <script>
 const typeColors = {
-  normal:'#A8A878', fire:'#F08030', water:'#6890F0',
-  electric:'#F8D030', grass:'#78C850', ice:'#98D8D8',
-  fighting:'#C03028', poison:'#A040A0', ground:'#E0C068',
-  flying:'#A890F0', psychic:'#F85888', bug:'#A8B820',
-  rock:'#B8A038', ghost:'#705898', dark:'#705848',
-  dragon:'#7038F8', steel:'#B8B8D0', fairy:'#EE99AC'
+  normal:'#A8A878',fire:'#F08030',water:'#6890F0',electric:'#F8D030',
+  grass:'#78C850',ice:'#98D8D8',fighting:'#C03028',poison:'#A040A0',
+  ground:'#E0C068',flying:'#A890F0',psychic:'#F85888',bug:'#A8B820',
+  rock:'#B8A038',ghost:'#705898',dark:'#705848',dragon:'#7038F8',
+  steel:'#B8B8D0',fairy:'#EE99AC'
 };
 
-// — populate Type Explorer —
+// Type Explorer
 const typeList = document.getElementById('type-list');
-Object.entries(typeColors).forEach(([type,color]) => {
-  const span = document.createElement('span');
-  span.className = 'type';
-  span.textContent = type;
-  span.style.background = color;
-  span.style.border     = `2px solid ${color}`;
-  span.addEventListener('click', () => {
-    // highlight selected type
-    document.querySelectorAll('#type-list .type').forEach(el => el.classList.remove('active'));
-    span.classList.add('active');
+Object.entries(typeColors).forEach(([type,color])=>{
+  const el = document.createElement('span');
+  el.className='type';
+  el.textContent=type;
+  el.style.background=color;
+  el.style.border=`2px solid ${color}`;
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('#type-list .type').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active');
     showTypeInfo(type);
   });
-  typeList.append(span);
+  typeList.append(el);
 });
-
-// — show type strengths/weaknesses & color panel —
-async function showTypeInfo(type) {
-  const scr       = document.getElementById('type-screen');
-  const name      = document.getElementById('type-name');
-  const strongBox = document.getElementById('type-strong');
-  const weakBox   = document.getElementById('type-weak');
-  try {
-    const r = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
-    const j = await r.json();
-    const strong = j.damage_relations.double_damage_to.map(x=>x.name);
-    const weak   = j.damage_relations.double_damage_from.map(x=>x.name);
-
-    name.textContent = type[0].toUpperCase() + type.slice(1);
-    strongBox.innerHTML = `<strong>Strong:</strong> ${strong.map(s=>s[0].toUpperCase()+s.slice(1)).join(', ')||'None'}`;
-    weakBox  .innerHTML = `<strong>Weak:</strong>   ${weak.map(w=>w[0].toUpperCase()+w.slice(1)).join(', ')||'None'}`;
-
-    scr.style.background = typeColors[type];
-    scr.style.color      = '#000';
-    scr.hidden = false;
-  } catch {
-    name.textContent = 'Error';
-    scr.hidden = false;
+async function showTypeInfo(type){
+  const scr=document.getElementById('type-screen'),
+        nm=document.getElementById('type-name'),
+        st=document.getElementById('type-strong'),
+        wk=document.getElementById('type-weak');
+  try{
+    const r=await fetch(`https://pokeapi.co/api/v2/type/${type}`),
+          j=await r.json();
+    const strong=j.damage_relations.double_damage_to.map(x=>x.name),
+          weak=j.damage_relations.double_damage_from.map(x=>x.name);
+    nm.textContent=type[0].toUpperCase()+type.slice(1);
+    st.innerHTML=`<strong>Strong:</strong> ${strong.map(s=>s[0].toUpperCase()+s.slice(1)).join(', ')||'None'}`;
+    wk.innerHTML=`<strong>Weak:</strong> ${weak.map(w=>w[0].toUpperCase()+w.slice(1)).join(', ')||'None'}`;
+    scr.style.background=typeColors[type];
+    scr.style.color='#000';
+    scr.hidden=false;
+  }catch{
+    nm.textContent='Error'; scr.hidden=false;
   }
 }
 
-// — Pokémon lookup autocomplete & display —
-const i = document.getElementById('i'), list = document.getElementById('list');
-let names = [], suggestions = [], selectedIndex = -1;
-fetch('https://pokeapi.co/api/v2/pokemon?limit=1010')
-  .then(r=>r.json()).then(d=>names = d.results.map(x=>x.name));
-i.addEventListener('input', () => {
-  const v = i.value.toLowerCase();
-  suggestions = v ? names.filter(n=>n.startsWith(v)).slice(0,5) : [];
-  list.innerHTML = suggestions.map(s=>`<li>${s}</li>`).join('');
-  list.hidden = !suggestions.length;
-  selectedIndex = -1;
+// Pokémon lookup
+const i=document.getElementById('i'),lst=document.getElementById('list');
+let names=[],sugs=[],si=-1;
+fetch('https://pokeapi.co/api/v2/pokemon?limit=1010').then(r=>r.json()).then(d=>names=d.results.map(x=>x.name));
+i.addEventListener('input',()=>{
+  const v=i.value.toLowerCase();
+  sugs=v?names.filter(n=>n.startsWith(v)).slice(0,5):[];
+  lst.innerHTML=sugs.map(s=>`<li>${s}</li>`).join('');
+  lst.hidden=!sugs.length; si=-1;
 });
-list.addEventListener('click', e => {
-  if (e.target.tagName==='LI') {
-    i.value = e.target.textContent;
-    list.hidden = true;
-    g();
-  }
+lst.addEventListener('click',e=>{ if(e.target.tagName==='LI'){ i.value=e.target.textContent; lst.hidden=true; g(); }});
+document.addEventListener('click',e=>{ if(!e.target.closest('.autocomplete')) lst.hidden=true; });
+i.addEventListener('keydown',e=>{
+  if(lst.hidden) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); si=Math.min(si+1,sugs.length-1); upd(); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); si=Math.max(si-1,0); upd(); }
+  else if(e.key==='Enter'&&si>-1){ e.preventDefault(); i.value=sugs[si]; lst.hidden=true; g(); }
 });
-document.addEventListener('click', e => {
-  if (!e.target.closest('.autocomplete')) list.hidden = true;
-});
-i.addEventListener('keydown', e => {
-  if (list.hidden) return;
-  if (e.key==='ArrowDown') {
-    e.preventDefault();
-    selectedIndex = Math.min(selectedIndex+1, suggestions.length-1);
-    updateActive();
-  } else if (e.key==='ArrowUp') {
-    e.preventDefault();
-    selectedIndex = Math.max(selectedIndex-1, 0);
-    updateActive();
-  } else if (e.key==='Enter' && selectedIndex>-1) {
-    e.preventDefault();
-    i.value = suggestions[selectedIndex];
-    list.hidden = true;
-    g();
-  }
-});
-function updateActive() {
-  Array.from(list.children).forEach((li,i)=>{
-    li.classList.toggle('active', i===selectedIndex);
-    if (i===selectedIndex) li.scrollIntoView({block:'nearest'});
-  });
-  if (selectedIndex>-1) i.value = suggestions[selectedIndex];
-}
+function upd(){ Array.from(lst.children).forEach((li,i)=>{ li.classList.toggle('active',i===si); if(i===si) li.scrollIntoView({block:'nearest'}); }); if(si>-1) i.value=sugs[si]; }
 
-const n = document.getElementById('n'),
-      t = document.getElementById('t'),
-      m = document.getElementById('m'),
-      w = document.getElementById('w'),
-      s = document.getElementById('s');
-
+const n=document.getElementById('n'),t=document.getElementById('t'),m=document.getElementById('m'),
+      w=document.getElementById('w'),s=document.getElementById('s');
 async function g(){
-  const v = i.value.trim().toLowerCase();
-  if (!v) return;
-  if (v==='0'||v==='nico') {
+  const v=i.value.trim().toLowerCase(); if(!v) return;
+  if(v==='0'||v==='nico'){
     n.textContent='Nico';
-    t.innerHTML=`
-      <span class="type" style="background:${typeColors.fighting};border:2px solid ${typeColors.fighting}">Fighting</span>
-      <span class="type" style="background:${typeColors.fairy};   border:2px solid ${typeColors.fairy}">Fairy</span>`;
+    t.innerHTML=`<span class="type" style="background:${typeColors.fighting};border:2px solid ${typeColors.fighting}">Fighting</span>
+                <span class="type" style="background:${typeColors.fairy};border:2px solid ${typeColors.fairy}">Fairy</span>`;
     m.src='images/cat0.png';
     w.innerHTML='<strong>Weak:</strong> Crinkle ball, Cat nip, Water';
     s.innerHTML='<strong>Strong:</strong> Angeli';
     return;
   }
-  try {
-    const r = await fetch('https://pokeapi.co/api/v2/pokemon/'+encodeURIComponent(v));
-    if (!r.ok) throw 0;
-    const j = await r.json();
-    n.textContent = j.name.replace(/^./,c=>c.toUpperCase());
-    t.innerHTML = j.types.map(x=>{
-      const c = typeColors[x.type.name]||'#ddd';
+  try{
+    const r=await fetch(`https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(v)}`);
+    if(!r.ok) throw 0;
+    const j=await r.json();
+    n.textContent=j.name.replace(/^./,c=>c.toUpperCase());
+    t.innerHTML=j.types.map(x=>{
+      const c=typeColors[x.type.name]||'#ddd';
       return `<span class="type" style="background:${c};border:2px solid ${c}">${x.type.name}</span>`;
     }).join('');
-    m.src = j.sprites.front_default||'';
-    const data = await Promise.all(
-      j.types.map(x=>fetch('https://pokeapi.co/api/v2/type/'+x.type.name).then(r=>r.json()))
-    );
-    const weakArr   = [...new Set(data.flatMap(d=>d.damage_relations.double_damage_from.map(x=>x.name)))];
-    const strongArr = [...new Set(data.flatMap(d=>d.damage_relations.double_damage_to.map(x=>x.name)))];
-    w.innerHTML = `<strong>Weak:</strong>   ${weakArr.map(x=>x[0].toUpperCase()+x.slice(1)).join(', ')||'None'}`;
-    s.innerHTML = `<strong>Strong:</strong> ${strongArr.map(x=>x[0].toUpperCase()+x.slice(1)).join(', ')||'None'}`;
-  } catch {
-    n.textContent='Not found'; t.innerHTML=''; m.src=''; w.innerHTML=''; s.innerHTML='';
+    m.src=j.sprites.front_default||'';
+    const dt=await Promise.all(j.types.map(x=>fetch(`https://pokeapi.co/api/v2/type/${x.type.name}`).then(r=>r.json())));
+    const weakArr=[...new Set(dt.flatMap(d=>d.damage_relations.double_damage_from.map(x=>x.name)))],
+          strongArr=[...new Set(dt.flatMap(d=>d.damage_relations.double_damage_to.map(x=>x.name)))];
+    w.innerHTML=`<strong>Weak:</strong> ${weakArr.map(x=>x[0].toUpperCase()+x.slice(1)).join(', ')||'None'}`;
+    s.innerHTML=`<strong>Strong:</strong> ${strongArr.map(x=>x[0].toUpperCase()+x.slice(1)).join(', ')||'None'}`;
+  }catch{
+    n.textContent='Not found';t.innerHTML='';m.src='';w.innerHTML='';s.innerHTML='';
   }
 }
 
-// — Encounters autocomplete & display —
-const areaInput = document.getElementById('area'),
-      areaList  = document.getElementById('area-list');
-let areaNames = [], areaSuggestions = [], areaSelIdx = -1, selectedAreaSlug = null;
-fetch('https://pokeapi.co/api/v2/location-area?limit=1000')
-  .then(r=>r.json()).then(d=>areaNames = d.results.map(x=>x.name));
-areaInput.addEventListener('input', ()=>{
-  selectedAreaSlug = null;
-  const v = areaInput.value.trim().toLowerCase();
-  areaSuggestions = v
-    ? areaNames.filter(n=>n.replace(/-/g,' ').toLowerCase().includes(v)).slice(0,5)
-    : [];
-  areaList.innerHTML = areaSuggestions.map(n=>{
-    const lbl = n.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
-    return `<li data-slug="${n}">${lbl}</li>`;
-  }).join('');
-  areaList.hidden = !areaSuggestions.length;
-  areaSelIdx = -1;
+// Encounters
+const areaIn=document.getElementById('area'),areaList=document.getElementById('area-list');
+let areaNames=[],areaSugs=[],aIdx=-1,selSlug=null;
+fetch('https://pokeapi.co/api/v2/location-area?limit=1000').then(r=>r.json()).then(d=>areaNames=d.results.map(x=>x.name));
+areaIn.addEventListener('input',()=>{
+  selSlug=null;
+  const v=areaIn.value.trim().toLowerCase();
+  areaSugs=v?areaNames.filter(n=>n.replace(/-/g,' ').toLowerCase().includes(v)).slice(0,5):[];
+  areaList.innerHTML=areaSugs.map(n=>{const lbl=n.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());return `<li data-slug="${n}">${lbl}</li>`}).join('');
+  areaList.hidden=!areaSugs.length;aIdx=-1;
 });
-areaList.addEventListener('click', e=>{
-  if (e.target.tagName==='LI') {
-    selectedAreaSlug = e.target.dataset.slug;
-    areaInput.value = e.target.textContent;
-    areaList.hidden = true;
-  }
+areaList.addEventListener('click',e=>{if(e.target.tagName==='LI'){selSlug=e.target.dataset.slug;areaIn.value=e.target.textContent;areaList.hidden=true;}});
+document.addEventListener('click',e=>{if(!e.target.closest('.encounters-controls')&&!e.target.closest('.autocomplete'))areaList.hidden=true;});
+areaIn.addEventListener('keydown',e=>{
+  if(areaList.hidden) return;
+  if(e.key==='ArrowDown'){e.preventDefault();aIdx=Math.min(aIdx+1,areaSugs.length-1);updArea();}
+  else if(e.key==='ArrowUp'){e.preventDefault();aIdx=Math.max(aIdx-1,0);updArea();}
+  else if(e.key==='Enter'&&aIdx>-1){e.preventDefault();const li=areaList.children[aIdx];selSlug=li.dataset.slug;areaIn.value=li.textContent;areaList.hidden=true;}
 });
-document.addEventListener('click', e=>{
-  if (!e.target.closest('.encounters-controls') && !e.target.closest('.autocomplete'))
-    areaList.hidden = true;
-});
-areaInput.addEventListener('keydown', e=>{
-  if (areaList.hidden) return;
-  if (e.key==='ArrowDown') {
-    e.preventDefault();
-    areaSelIdx = Math.min(areaSelIdx+1, areaSuggestions.length-1);
-    updateArea();
-  } else if (e.key==='ArrowUp') {
-    e.preventDefault();
-    areaSelIdx = Math.max(areaSelIdx-1, 0);
-    updateArea();
-  } else if (e.key==='Enter' && areaSelIdx>-1) {
-    e.preventDefault();
-    const li = areaList.children[areaSelIdx];
-    selectedAreaSlug = li.dataset.slug;
-    areaInput.value = li.textContent;
-    areaList.hidden = true;
-  }
-});
-function updateArea(){
-  Array.from(areaList.children).forEach((li,i)=>{
-    li.classList.toggle('active', i===areaSelIdx);
-    if (i===areaSelIdx) li.scrollIntoView({block:'nearest'});
-  });
-  if (areaSelIdx>-1) {
-    areaInput.value = areaList.children[areaSelIdx].textContent;
-    selectedAreaSlug = areaSuggestions[areaSelIdx];
-  }
-}
-
-// allow Enter in the area field to trigger a search
-areaInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    showEncounters();
-  }
-});
-
-document.getElementById('btn-enc').addEventListener('click', showEncounters);
+function updArea(){Array.from(areaList.children).forEach((li,i)=>{li.classList.toggle('active',i===aIdx);if(i===aIdx)li.scrollIntoView({block:'nearest'});});if(aIdx>-1){areaIn.value=areaList.children[aIdx].textContent;selSlug=areaSugs[aIdx];}}
+areaIn.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();showEncounters();}});
+document.getElementById('btn-enc').addEventListener('click',showEncounters);
 async function showEncounters(){
-  const game  = document.getElementById('game').value;
-  const label = areaInput.value.trim();
-  if (!game || !label) return;
-  document.getElementById('encounters-screen').hidden = false;
-  const slug = selectedAreaSlug || label.toLowerCase().replace(/ /g,'-');
-  try {
-    const r    = await fetch(`https://pokeapi.co/api/v2/location-area/${encodeURIComponent(slug)}`);
-    const data = await r.json();
-    const encs = data.pokemon_encounters.filter(e=>
-      e.version_details.some(v=>v.version.name===game)
-    );
-    const uniq = [...new Set(encs.map(e=>e.pokemon.name))];
-    const cont = document.getElementById('encounters');
-    cont.innerHTML = '';
+  const game=document.getElementById('game').value,label=areaIn.value.trim();
+  if(!game||!label) return;
+  const screen=document.getElementById('encounters-screen');
+  screen.hidden=false;
+  const slug=selSlug||label.toLowerCase().replace(/ /g,'-');
+  try{
+    const r=await fetch(`https://pokeapi.co/api/v2/location-area/${encodeURIComponent(slug)}`),
+          data=await r.json();
+    const encs=data.pokemon_encounters.filter(e=>e.version_details.some(v=>v.version.name===game)),
+          uniq=[...new Set(encs.map(e=>e.pokemon.name))];
+    const cont=document.getElementById('encounters');
+    cont.innerHTML='';
     uniq.forEach(name=>{
-      const url = data.pokemon_encounters.find(e=>e.pokemon.name===name).pokemon.url;
-      const id  = url.split('/').slice(-2)[0];
-      const cap = name.replace(/^./,c=>c.toUpperCase());
-      cont.innerHTML += `
-        <div style="text-align:center;font-size:.9em;">
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png"><br>${cap}
-        </div>`;
+      const url=data.pokemon_encounters.find(e=>e.pokemon.name===name).pokemon.url,
+            id=url.split('/').slice(-2)[0],
+            cap=name.replace(/^./,c=>c.toUpperCase());
+      cont.innerHTML+=`<div style="text-align:center;font-size:.9em;"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png"><br>${cap}</div>`;
     });
-  } catch {
-    document.getElementById('encounters').innerHTML = 'Error loading encounters';
+  }catch{
+    document.getElementById('encounters').innerHTML='Error loading encounters';
   }
 }
 </script>
