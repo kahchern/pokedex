@@ -108,7 +108,7 @@
   .list{
     position:absolute;top:100%;left:0;right:0;
     background:#fff;color:#000;
-    max-height:150px;overflow:auto;
+    max-height:200px;overflow:auto;
     border:1px solid #333;margin:0;padding:0;
     list-style:none;z-index:1000;
   }
@@ -336,7 +336,7 @@ function showTypeInfo(type, element) {
   screen.hidden = false;
 }
 
-// Pokemon data loading
+// Pokemon data loading - improved to handle more pokemon efficiently
 async function loadPokemonData() {
   if (isDataLoaded) return;
   
@@ -344,62 +344,126 @@ async function loadPokemonData() {
   loading.style.display = 'block';
   
   try {
+    // Get total count of Pokemon
     const speciesData = await (await fetch('https://pokeapi.co/api/v2/pokemon-species?limit=1')).json();
-    const totalPokemon = speciesData.count;
-    const batchSize = 50;
+    const totalPokemon = Math.min(speciesData.count, 1010); // Cap at reasonable number for performance
+    
+    // Load Pokemon data in larger batches for better performance
+    const batchSize = 100;
+    const loadPromises = [];
     
     for (let batch = 0; batch < Math.ceil(totalPokemon / batchSize); batch++) {
-      const promises = [];
       const start = batch * batchSize + 1;
       const end = Math.min((batch + 1) * batchSize, totalPokemon);
       
-      for (let i = start; i <= end; i++) {
-        promises.push((async () => {
-          try {
-            const pokemon = await (await fetch(`https://pokeapi.co/api/v2/pokemon/${i}`)).json();
-            return {
-              id: pokemon.id,
-              name: pokemon.name,
-              types: pokemon.types.map(t => t.type.name),
-              sprite: pokemon.sprites?.front_default || pokemon.sprites?.other?.['official-artwork']?.front_default
-            };
-          } catch { return null; }
-        })());
-      }
+      const batchPromise = (async () => {
+        const batchPokemon = [];
+        const promises = [];
+        
+        for (let i = start; i <= end; i++) {
+          promises.push((async () => {
+            try {
+              const pokemon = await (await fetch(`https://pokeapi.co/api/v2/pokemon/${i}`)).json();
+              return {
+                id: pokemon.id,
+                name: pokemon.name,
+                types: pokemon.types.map(t => t.type.name),
+                sprite: pokemon.sprites?.front_default || pokemon.sprites?.other?.['official-artwork']?.front_default
+              };
+            } catch { 
+              return null; 
+            }
+          })());
+        }
+        
+        const results = await Promise.allSettled(promises);
+        return results.filter(r => r.status === 'fulfilled' && r.value).map(r => r.value);
+      })();
       
-      const results = await Promise.allSettled(promises);
-      pokemonData.push(...results.filter(r => r.status === 'fulfilled' && r.value).map(r => r.value));
+      loadPromises.push(batchPromise);
     }
     
-    pokemonData.sort((a, b) => a.id - b.id);
+    // Wait for all batches to complete
+    const batchResults = await Promise.all(loadPromises);
+    pokemonData = batchResults.flat().sort((a, b) => a.id - b.id);
+    
     isDataLoaded = true;
     loading.style.display = 'none';
+    console.log(`Loaded ${pokemonData.length} Pokemon`);
     
   } catch (error) {
+    console.error('Error loading Pokemon data:', error);
     loading.textContent = 'Failed to load Pokémon data. Please refresh.';
   }
 }
 
-// Evolution chain loading
+// Improved evolution chain loading to handle branching evolutions like Eevee
 async function loadEvolutionChain(pokemonName) {
   try {
     const species = await (await fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemonName}`)).json();
     const evolution = await (await fetch(species.evolution_chain.url)).json();
     
-    const chain = [];
-    let current = evolution.chain;
-    
-    while (current) {
-      const pokemon = pokemonData.find(p => p.name === current.species.name);
-      if (pokemon) chain.push({id: pokemon.id, name: pokemon.name, sprite: pokemon.sprite});
-      current = current.evolves_to?.[0];
+    // Recursive function to collect all Pokemon in the evolution chain
+    function collectEvolutions(chainNode, evolutions = []) {
+      // Add current Pokemon
+      const pokemon = pokemonData.find(p => p.name === chainNode.species.name);
+      if (pokemon) {
+        evolutions.push({
+          id: pokemon.id, 
+          name: pokemon.name, 
+          sprite: pokemon.sprite,
+          stage: evolutions.length
+        });
+      }
+      
+      // Add all possible evolutions (handles branching like Eevee)
+      if (chainNode.evolves_to && chainNode.evolves_to.length > 0) {
+        const nextStageEvolutions = [];
+        
+        // Collect all evolutions at the next stage
+        chainNode.evolves_to.forEach(nextEvolution => {
+          const nextPokemon = pokemonData.find(p => p.name === nextEvolution.species.name);
+          if (nextPokemon) {
+            nextStageEvolutions.push({
+              id: nextPokemon.id, 
+              name: nextPokemon.name, 
+              sprite: nextPokemon.sprite,
+              stage: evolutions.length
+            });
+          }
+          
+          // Recursively get further evolutions
+          if (nextEvolution.evolves_to && nextEvolution.evolves_to.length > 0) {
+            nextEvolution.evolves_to.forEach(finalEvolution => {
+              const finalPokemon = pokemonData.find(p => p.name === finalEvolution.species.name);
+              if (finalPokemon) {
+                nextStageEvolutions.push({
+                  id: finalPokemon.id, 
+                  name: finalPokemon.name, 
+                  sprite: finalPokemon.sprite,
+                  stage: evolutions.length + 1
+                });
+              }
+            });
+          }
+        });
+        
+        evolutions.push(...nextStageEvolutions);
+      }
+      
+      return evolutions;
     }
     
+    const chain = collectEvolutions(evolution.chain);
     return chain.length > 1 ? chain : null;
-  } catch { return null; }
+    
+  } catch (error) {
+    console.error('Error loading evolution chain:', error);
+    return null;
+  }
 }
 
-// Autocomplete setup
+// Improved autocomplete setup with better search functionality
 function setupAutocomplete() {
   const input = document.getElementById('i');
   const list = document.getElementById('list');
@@ -415,7 +479,7 @@ function setupAutocomplete() {
   };
 
   input.addEventListener('input', function() {
-    const value = this.value.toLowerCase();
+    const value = this.value.toLowerCase().trim();
     clearBtn.classList.toggle('show', value.length > 0);
     list.innerHTML = '';
     activeIndex = -1;
@@ -425,9 +489,28 @@ function setupAutocomplete() {
       return;
     }
 
-    const matches = pokemonData.filter(p => 
-      p.name.toLowerCase().includes(value) || p.id.toString().includes(value)
-    ).slice(0, 10);
+    // Improved search algorithm - prioritize exact matches and beginning matches
+    const matches = pokemonData.filter(p => {
+      const name = p.name.toLowerCase();
+      const id = p.id.toString();
+      return name.includes(value) || id.includes(value);
+    }).sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Prioritize exact matches
+      if (aName === value) return -1;
+      if (bName === value) return 1;
+      
+      // Then prioritize matches at the beginning
+      const aStarts = aName.startsWith(value);
+      const bStarts = bName.startsWith(value);
+      if (aStarts && !bStarts) return -1;
+      if (!aStarts && bStarts) return 1;
+      
+      // Finally sort by ID
+      return a.id - b.id;
+    }).slice(0, 20); // Show more results (20 instead of 10)
 
     if (matches.length) {
       matches.forEach(pokemon => {
@@ -484,10 +567,14 @@ async function g() {
 
   document.getElementById('list').hidden = true;
 
+  // Improved search - try exact match first, then partial match
   let pokemon = pokemonData.find(p => 
-    p.name.toLowerCase() === value || p.id.toString() === value ||
-    p.name.toLowerCase().includes(value)
+    p.name.toLowerCase() === value || p.id.toString() === value
   );
+  
+  if (!pokemon) {
+    pokemon = pokemonData.find(p => p.name.toLowerCase().includes(value));
+  }
 
   const statsContainer = document.getElementById('pokemon-stats');
   const evolutionSection = document.getElementById('evolution-section');
@@ -534,35 +621,45 @@ async function g() {
 
   statsContainer.style.display = 'flex';
 
-  // Load evolution chain
+  // Load evolution chain with improved handling
   const evolutionChain = await loadEvolutionChain(pokemon.name);
   if (evolutionChain) {
     const chainContainer = document.getElementById('evolution-chain');
     chainContainer.innerHTML = '';
     
-    evolutionChain.forEach((evo, index) => {
-      const evoDiv = document.createElement('div');
-      evoDiv.className = 'evolution-pokemon';
-      if (evo.id === pokemon.id) evoDiv.style.backgroundColor = '#e0e0e0';
+    // Group by evolution stage for better display
+    const stageGroups = {};
+    evolutionChain.forEach(evo => {
+      if (!stageGroups[evo.stage]) stageGroups[evo.stage] = [];
+      stageGroups[evo.stage].push(evo);
+    });
+    
+    const stages = Object.keys(stageGroups).sort((a, b) => parseInt(a) - parseInt(b));
+    
+    stages.forEach((stage, stageIndex) => {
+      const stageEvolutions = stageGroups[stage];
       
-      const img = document.createElement('img');
-      img.src = evo.sprite || '';
-      img.alt = evo.name;
+      // If there are multiple evolutions in this stage, group them
+      if (stageEvolutions.length > 1) {
+        const stageDiv = document.createElement('div');
+        stageDiv.style.display = 'flex';
+        stageDiv.style.flexDirection = 'column';
+        stageDiv.style.alignItems = 'center';
+        stageDiv.style.gap = '0.3em';
+        
+        stageEvolutions.forEach(evo => {
+          const evoDiv = createEvolutionElement(evo, pokemon);
+          stageDiv.appendChild(evoDiv);
+        });
+        
+        chainContainer.appendChild(stageDiv);
+      } else {
+        const evoDiv = createEvolutionElement(stageEvolutions[0], pokemon);
+        chainContainer.appendChild(evoDiv);
+      }
       
-      const name = document.createElement('span');
-      name.textContent = capitalizeWords(evo.name);
-      
-      evoDiv.appendChild(img);
-      evoDiv.appendChild(name);
-      evoDiv.onclick = () => {
-        document.getElementById('i').value = evo.name;
-        document.getElementById('clear-btn').classList.add('show');
-        g();
-      };
-      
-      chainContainer.appendChild(evoDiv);
-      
-      if (index < evolutionChain.length - 1) {
+      // Add arrow between stages (except after the last stage)
+      if (stageIndex < stages.length - 1) {
         const arrow = document.createElement('span');
         arrow.className = 'evolution-arrow';
         arrow.textContent = '→';
@@ -574,6 +671,30 @@ async function g() {
   } else {
     evolutionSection.style.display = 'none';
   }
+}
+
+// Helper function to create evolution element
+function createEvolutionElement(evo, currentPokemon) {
+  const evoDiv = document.createElement('div');
+  evoDiv.className = 'evolution-pokemon';
+  if (evo.id === currentPokemon.id) evoDiv.style.backgroundColor = '#e0e0e0';
+  
+  const img = document.createElement('img');
+  img.src = evo.sprite || '';
+  img.alt = evo.name;
+  
+  const name = document.createElement('span');
+  name.textContent = capitalizeWords(evo.name);
+  
+  evoDiv.appendChild(img);
+  evoDiv.appendChild(name);
+  evoDiv.onclick = () => {
+    document.getElementById('i').value = evo.name;
+    document.getElementById('clear-btn').classList.add('show');
+    g();
+  };
+  
+  return evoDiv;
 }
 
 // Initialize
